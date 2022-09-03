@@ -81,6 +81,8 @@ export function compileSalad(fileName, fileContents) {
     tree.match({ tag: "template" }, (n) => {
       // I would make the tag "", but unfortunately the library will turn it into a <div> when I do that. Fortunately, Babel does not seem to give a fuck.
       n.tag = " ";
+
+      return n;
     });
 
     return tree;
