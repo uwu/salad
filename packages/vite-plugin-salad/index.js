@@ -1,24 +1,26 @@
 // This file is mostly copied from https://github.com/lxsmnsyc/solid-marked/blob/main/packages/vite-plugin-solid-marked/src/index.ts, thank you lxsmnsyc.
 
-import {
-  compileSalad
-} from "../salad/index.js";
+import {compileSalad} from "@uwu/salad";
 import fs from "fs/promises";
 import path from "path";
 
 export default function pluginSalad() {
   return {
     name: "salad-sfc",
+    enforce: "pre",
+
     resolveId(id, importer) {
+      //console.log(id)
       if ((id.endsWith(".s.html") || id.endsWith(".s.html.jsx")) && importer) {
         return path.join(path.dirname(importer), id)
       }
 
       return null;
     },
+
     async load(id) {
       if (id.startsWith("\0")) return null;
-      
+
       if (id.endsWith(".s.html")) {
         const { name, ext } = path.parse(id);
 
