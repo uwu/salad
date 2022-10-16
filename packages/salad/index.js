@@ -1,9 +1,8 @@
 import posthtml from "posthtml";
-import { transform } from "@babel/core";
-import g from "@babel/generator";
+import { blankSpan, jsxTransform } from "emitkit";
+import { parseSync, printSync } from "@swc/core";
 
-// what the fuck?
-const generate = g.default;
+const transformer = jsxTransform({ parseSync, printSync });
 
 export function compileSalad(fileName, fileContents) {
   let componentName = fileName.slice(0, -7);
@@ -51,7 +50,7 @@ export function compileSalad(fileName, fileContents) {
             node.attrs[attr + "={true}"] = true;
             continue;
           }
-          
+
           // Event handler transform
           if (attr[0] === "@") {
             const value = node.attrs[attr];
@@ -92,38 +91,34 @@ export function compileSalad(fileName, fileContents) {
     sync: true,
   }).html;
 
-
   const importAst = {
-    type: "Program",
-    body: []
-  }
+    type: "Module",
+    body: [],
+    span: blankSpan,
+    interpreter: null,
+  };
 
-  mainScript = transform(mainScript, {
-    plugins: [
-      {
-        visitor: {
-          ImportDeclaration(path) {
-            importAst.body.push(path.node);
-            path.remove();
-          },
-        },
-      },
-      ["@babel/plugin-syntax-jsx"],
-    ],
-    sourceType: "module",
+  mainScript = transformer(mainScript, {
+    plugin: (p) => {
+      for (const stmt of p.body)
+        if (stmt.type === "ImportDeclaration") importAst.body.push(stmt);
+
+      p.body = p.body.filter((e) => e.type !== "ImportDeclaration");
+
+      return p;
+    },
   }).code;
-  otherScripts.push(generate(importAst).code)
+
+  otherScripts.push(printSync(importAst).code);
 
   // Post transform building
-  let built = `
+  return `
   ${otherScripts.join("\n")}
 
-  export default function ${componentName}($props) {${
-    mainScript ? "\n" + mainScript : ""
-  }
+  export default function ${componentName}($props) {
+    ${mainScript ? "\n" + mainScript : ""}
+    
     return <>${template}</>
   }
   `.trim();
-
-  return built;
 }

@@ -11,6 +11,6 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@uwu/salad": "workspace:^0.0.2"
+    "@uwu/salad": "workspace:*"
   }
 }
