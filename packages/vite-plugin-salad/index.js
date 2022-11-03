@@ -1,54 +1,55 @@
-// This file is mostly copied from https://github.com/lxsmnsyc/solid-marked/blob/main/packages/vite-plugin-solid-marked/src/index.ts, thank you lxsmnsyc.
-
-import {compileSalad} from "@uwu/salad";
+import { compileSalad } from "@uwu/salad";
 import fs from "fs/promises";
 import path from "path";
 
 export default function pluginSalad() {
+  let devMode = false;
+
   return {
     name: "salad-sfc",
     enforce: "pre",
-
+    configResolved(config) {
+      devMode = config.command == "serve";
+    },
     resolveId(id, importer) {
-      //console.log(id)
-      if ((id.endsWith(".s.html") || id.endsWith(".s.html.jsx")) && importer) {
-        return path.join(path.dirname(importer), id)
-      }
+      if (id.endsWith(".s.html.jsx")) return id;
+      if (!id.endsWith(".s.html")) return null;
 
-      return null;
+      let resolvedId = id;
+      if (importer) resolvedId = path.join(path.dirname(importer), id);
+
+      // If you stare at Vite long enough it will collapse in on itself.
+      return devMode ? resolvedId : resolvedId + ".jsx";
     },
 
     async load(id) {
-      if (id.startsWith("\0")) return null;
-
-      if (id.endsWith(".s.html")) {
-        const { name, ext } = path.parse(id);
-
-        return `export * from '${name}${ext}.jsx'; export { default } from '${name}${ext}.jsx'`
+      if (devMode) {
+        if (id.endsWith(".s.html"))
+          return `export { default } from "${id}.jsx"; export * from "${id}.jsx"`;
       }
 
-      if (id.endsWith(".s.html.jsx")) {
-        const { dir, name } = path.parse(id);
-        const target = path.join(dir, name);
-        const content = await fs.readFile(target, "utf-8");
+      if (!id.endsWith(".s.html.jsx")) return null;
 
-        return compileSalad(name, content)
-      }
+      let modPath = id.slice(0, -4);
+      
+      // See line 21 for more information.
+      if (devMode) modPath = path.join(process.cwd(), modPath);
 
-
-      return null;
+      const fileContent = await fs.readFile(modPath, "utf-8");
+      return compileSalad(path.basename(modPath), fileContent);
     },
+
     handleHotUpdate(ctx) {
       if (!ctx?.file?.endsWith?.(".s.html")) return;
 
       const modules = [];
       for (const mod of ctx.modules) {
         for (const imported of mod.importedModules) {
-          modules.push(imported)
+          modules.push(imported);
         }
       }
 
       return modules;
-    }
-  }
+    },
+  };
 }
