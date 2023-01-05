@@ -1,95 +1,90 @@
-import posthtml from "posthtml";
+import {
+  parse,
+  transform,
+  walk,
+  COMMENT_NODE,
+  TEXT_NODE,
+} from "ultrahtml";
+import swap from "ultrahtml/transformers/swap";
 import { blankSpan, jsxTransform } from "emitkit";
 import { parseSync, printSync } from "@swc/core";
 
 const transformer = jsxTransform({ parseSync, printSync });
 
-export function compileSalad(fileName, fileContents) {
+export async function compileSalad(fileName, fileContents) {
   let componentName = fileName.slice(0, -7);
 
-  let mainScript;
+  let template = "";
+  let mainScript = "";
   let otherScripts = [];
 
-  const template = posthtml((tree) => {
-    for (const n of tree) {
-      if (n?.tag === "script") {
-        const content = n.content.join();
-
-        if (!mainScript && n?.attrs?.salad === true) {
-          mainScript = content;
-          continue;
-        }
-
-        otherScripts.push(n.content.join());
-      } else if (n?.tag === "template") {
-        tree.length = 0;
-        tree.push(...n?.content);
-      }
+  for (const n of parse(fileContents).children) {
+    if (n.name == "script") {
+      if (!mainScript && n.attributes?.salad == "") {
+        mainScript = n.children[0].value;
+      } else otherScripts.push(n.children[0].value);
     }
 
-    tree.walk((node) => {
-      if (typeof node === "string") {
-        // Comment transform
-        if (node.startsWith("<!--") && node.endsWith("-->"))
-          return (
-            "{/*" +
-            node.slice(4, -3).replaceAll("/*", "").replaceAll("*/", "") +
-            "*/}"
+    if (n.name == "template" && !template) template = n.children[0];
+  }
+
+  template = await transform(template, [
+    (node) => {
+      walk(node, (n) => {
+        // comment transform
+        if (n.type == COMMENT_NODE) {
+          n.type = TEXT_NODE;
+          n.value = `{/*${n.value.replace(/\/\*|\*\//g, "")}*/}`;
+        }
+
+        // interpolation transform
+        if (n.type == TEXT_NODE) {
+          n.value = n.value.replace(/\{\{[^}]*}}/g, (match) =>
+            match.slice(1, -1)
           );
+        }
 
-        // Text interpolation transform
-        return node.replace(/\{\{[^}]*}}/g, (match) => match.slice(1, -1));
-      }
+        // attribute transofmrs
+        for (const attr in n.attributes) {
+          const value = n.attributes[attr];
 
-      // Attribute-based transforms
-      if (node?.attrs) {
-        for (const attr in node.attrs) {
-          // Attributes without equals true transform
-          if (node.attrs[attr] === true) {
-            delete node.attrs[attr];
-            node.attrs[attr + "={true}"] = true;
+          // empty attribute = true transform
+          if (value == "") {
+            delete n.attributes[attr];
+            n.attributes[`${attr}={true}`] = true;
             continue;
           }
 
-          // Event handler transform
-          if (attr[0] === "@") {
-            const value = node.attrs[attr];
-            delete node.attrs[attr];
-
-            node.attrs[
+          // event handler transform
+          if (attr[0] == "@") {
+            delete n.attributes[attr];
+            n.attributes[
               `${attr.substring(1)}={($event) => { ${value} }}`
             ] = true;
-          } else if (attr[0] === ":") {
-            const value = node.attrs[attr];
-            delete node.attrs[attr];
+          }
+
+          // dynamic binding transform
+          if (attr[0] === ":") {
+            delete n.attributes[attr];
 
             if (attr.startsWith(":[") && attr.endsWith("]")) {
-              node.attrs[`{...{ [${attr.slice(2, -1)}]: ${value} }}`] = true;
+              node.attributes[
+                `{...{ [${attr.slice(2, -1)}]: ${value} }}`
+              ] = true;
               continue;
             }
 
-            node.attrs[`${attr.substring(1)}={${value}}`] = true;
+            node.attributes[`${attr.substring(1)}={${value}}`] = true;
           }
         }
-      }
+      });
 
       return node;
-    });
-
-    // Template transform
-    tree.match({ tag: "template" }, (n) => {
-      // I would make the tag "", but unfortunately the library will turn it into a <div> when I do that. Fortunately, Babel does not seem to give a fuck.
-      n.tag = " ";
-
-      return n;
-    });
-
-    return tree;
-  }).process(fileContents, {
-    recognizeNoValueAttribute: true,
-    closingSingleTag: "slash",
-    sync: true,
-  }).html;
+    },
+    swap({
+      template: "",
+    }),
+  ]);
 
   const importAst = {
     type: "Module",
@@ -109,7 +104,7 @@ export function compileSalad(fileName, fileContents) {
     },
   }).code;
 
-  otherScripts.push(printSync(importAst).code);
+  otherScripts.unshift(printSync(importAst).code);
 
   // Post transform building
   return `
