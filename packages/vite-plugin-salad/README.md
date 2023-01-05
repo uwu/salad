@@ -3,6 +3,7 @@ This package does transforms on `.s.html` files to convert them to JSX (or TSX p
 
 ## Usage
 Install `vite-plugin-solid` using the steps listed [here](https://github.com/solidjs/vite-plugin-solid#installation).
+Install `@uwu/salad` as a dev dependency (whichever version you prefer).
 
 Then install `vite-plugin-salad` as a dev dependency.
 ```bash
