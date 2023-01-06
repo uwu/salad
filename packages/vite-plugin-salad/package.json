@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-salad",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "This package does transforms on `.s.html` files to convert them to JSX (or TSX potentially!) for use in SolidJS projects.",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,6 @@
   "license": "MIT",
   "type": "module",
   "peerDependencies": {
-    "@uwu/salad": "workspace:*"
+    "@uwu/salad": "*"
   }
 }

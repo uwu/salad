@@ -1,7 +1,7 @@
 {
-  "name": "ultrahtml",
+  "name": "notultrahtml",
   "type": "module",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/natemoo-re/ultrahtml"
@@ -44,7 +44,7 @@
     "node": "18.7.0"
   },
   "packageManager": "pnpm@7.6.0",
-  "devDependencies": {
+  "dependencies": {
     "@changesets/cli": "^2.18.1",
     "@types/stylis": "^4.0.2",
     "chalk": "^5.1.2",

@@ -5,8 +5,8 @@ import {
   render,
   COMMENT_NODE,
   TEXT_NODE,
-} from "ultrahtml";
-import swap from "ultrahtml/transformers/swap";
+} from "notultrahtml";
+import swap from "notultrahtml/transformers/swap";
 import { blankSpan, jsxTransform } from "emitkit";
 import { parseSync, printSync } from "@swc/core";
 

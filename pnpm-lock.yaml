@@ -2,17 +2,7 @@ lockfileVersion: 5.4
 
 importers:
 
-  packages/salad:
-    specifiers:
-      '@swc/core': ^1.3.8
-      emitkit: ^1.3.1
-      ultrahtml: workspace:ultrahtml@*
-    dependencies:
-      '@swc/core': 1.3.11
-      emitkit: 1.3.1
-      ultrahtml: link:../ultrahtml
-
-  packages/ultrahtml:
+  packages/notultrahtml:
     specifiers:
       '@changesets/cli': ^2.18.1
       '@types/stylis': ^4.0.2
@@ -44,11 +34,18 @@ importers:
       typescript: 4.9.4
       vitest: 0.20.3
 
-  packages/vite-plugin-salad:
+  packages/salad:
     specifiers:
-      '@uwu/salad': workspace:*
+      '@swc/core': ^1.3.8
+      emitkit: ^1.3.1
+      notultrahtml: workspace:*
     dependencies:
-      '@uwu/salad': link:../salad
+      '@swc/core': 1.3.11
+      emitkit: 1.3.1
+      notultrahtml: link:../notultrahtml
+
+  packages/vite-plugin-salad:
+    specifiers: {}
 
 packages:
 
