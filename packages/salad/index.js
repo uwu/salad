@@ -47,6 +47,12 @@ export async function compileSalad(fileName, fileContents) {
 
         // attribute transofmrs
         for (const attr in n.attributes) {
+          if (attr == "") {
+            delete n.attributes[attr];
+            continue;
+          }
+          
+          console.log(n.attributes)
           const value = n.attributes[attr];
 
           // empty attribute = true transform
