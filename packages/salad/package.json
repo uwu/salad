@@ -1,6 +1,6 @@
 {
   "name": "@uwu/salad",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "An SFC compiler for SolidJS inspired heavily by Vue 3's single-file-components.",
   "main": "index.js",
   "scripts": {

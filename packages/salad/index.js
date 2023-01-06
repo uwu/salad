@@ -2,6 +2,7 @@ import {
   parse,
   transform,
   walk,
+  render,
   COMMENT_NODE,
   TEXT_NODE,
 } from "ultrahtml";
@@ -25,7 +26,7 @@ export async function compileSalad(fileName, fileContents) {
       } else otherScripts.push(n.children[0].value);
     }
 
-    if (n.name == "template" && !template) template = n.children[0];
+    if (n.name == "template" && !template) template = await render({ type: 0, children: n.children });
   }
 
   template = await transform(template, [
@@ -68,13 +69,13 @@ export async function compileSalad(fileName, fileContents) {
             delete n.attributes[attr];
 
             if (attr.startsWith(":[") && attr.endsWith("]")) {
-              node.attributes[
+              n.attributes[
                 `{...{ [${attr.slice(2, -1)}]: ${value} }}`
               ] = true;
               continue;
             }
 
-            node.attributes[`${attr.substring(1)}={${value}}`] = true;
+            n.attributes[`${attr.substring(1)}={${value}}`] = true;
           }
         }
       });
